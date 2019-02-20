@@ -3,8 +3,10 @@
 
 #include <QMainWindow>
 #include <QTreeWidgetItem>
+#include <thread>
 #include "TCPClient.h"
 #include "SSDBCommand.h"
+#include "SSDBHandler.h"
 #include "NoticeDialog.h"
 
 namespace Ui {
@@ -28,10 +30,21 @@ private slots:
     void on_pushButton_keyValue_delete_clicked();
 
 private:
-    bool                     sendSSDBCommandRequest(std::string cmd);
+    void                     runSSDBActionTaskThread();
+    SSDBCommandType          getCurrentSSDBCommandType();
+    void                     setCurrentSSDBCommandType(SSDBCommandType p_type);
+
+    bool                     MainWindwActionConnectOrDisConnect();
+    bool                     MainWindwActionKeyValueUpdate();
+    bool                     MainWindwActionKeyValueInsert();
+    bool                     MainWindwActionKeyValueDelete();
+
     Ui::MainWindow           *ui;
-    TCPClient                tcpclient;
-    SSDBCommandType          currentCommand;
+    SSDBHandler              m_ssdbHandler;
+    std::thread              m_taskThread;
+    bool                     m_taskThreadExit;
+    SSDBCommandType          m_currentCommand;
+    std::mutex               m_currentCommandMutex;
 };
 
 #endif // MAINWINDOW_H

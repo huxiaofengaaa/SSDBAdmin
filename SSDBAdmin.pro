@@ -17,13 +17,15 @@ SOURCES += main.cpp\
     SSDBCommand.cpp \
     TCPClient.cpp \
     Utility.cpp \
-    NoticeDialog.cpp
+    NoticeDialog.cpp \
+    SSDBHandler.cpp
 
 HEADERS  += MainWindow.h \
     SSDBCommand.h \
     TCPClient.h \
     Utility.h \
-    NoticeDialog.h
+    NoticeDialog.h \
+    SSDBHandler.h
 
 FORMS    += MainWindow.ui \
     NoticeDialog.ui

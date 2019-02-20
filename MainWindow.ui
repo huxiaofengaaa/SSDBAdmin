@@ -120,6 +120,19 @@
              <string>操作</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_5">
+             <item row="3" column="0">
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>56</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
              <item row="0" column="0">
               <widget class="QGroupBox" name="groupBox_2">
                <property name="title">
@@ -290,17 +303,18 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <spacer name="verticalSpacer">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
+              <widget class="QLabel" name="label_10">
+               <property name="text">
+                <string>备注：
+（1）使用KeyStart和KeyEnd过滤；
+（2）插入时超时时间单位是秒，可以不设置，
+但必须设置Key和Value；
+（3）删除操作只需要输入key；
+（4）按照前缀删除格式：keyName%；
+（5）按照后缀删除格式：%keyName；
+（6）按照串匹配删除格式：%KeyName%</string>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>56</height>
-                </size>
-               </property>
-              </spacer>
+              </widget>
              </item>
             </layout>
            </widget>
