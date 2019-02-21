@@ -11,10 +11,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget_valueType->setTabText(2, "Sorted Set");
     ui->tabWidget_valueType->setTabText(3, "List");
 
-    QObject::connect(ui->treeWidget_keyValue,
-                     SIGNAL(itemClicked(QTreeWidgetItem*, int)),
-                     this,
-                     SLOT(KeyValueTreeWidgetOneClicked(QTreeWidgetItem*, int)));
+    QObject::connect(ui->treeWidget_keyValue, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+                     this, SLOT(KeyValueTreeWidgetOneClicked(QTreeWidgetItem*, int)));
 
     m_currentCommand = SSDB_COMMAND_NONE;
 
@@ -26,53 +24,10 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    QObject::disconnect(ui->treeWidget_keyValue,
-                        SIGNAL(itemClicked(QTreeWidgetItem*, int)),
-                        this,
-                        SLOT(KeyValueTreeWidgetOneClicked(QTreeWidgetItem*, int)));
+    QObject::disconnect(ui->treeWidget_keyValue, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+                        this, SLOT(KeyValueTreeWidgetOneClicked(QTreeWidgetItem*, int)));
     m_taskThreadExit = true;
     m_taskThread.join();
-}
-
-void MainWindow::runSSDBActionTaskThread()
-{
-    while(m_taskThreadExit == false)
-    {
-        SSDBCommandType l_currentType = getCurrentSSDBCommandType();
-        if(l_currentType == SSDB_COMMAND_NONE)
-        {
-            std::chrono::milliseconds dura(100);
-            std::this_thread::sleep_for(dura);
-            continue;
-        }
-        else
-        {
-            switch(l_currentType)
-            {
-            case SSDB_COMMAND_CONNECT:
-            {
-                MainWindwActionConnectOrDisConnect();
-                break;
-            }
-            case SSDB_COMMAND_KV_SCAN:
-            {
-                MainWindwActionKeyValueUpdate();
-                break;
-            }
-            case SSDB_COMMAND_KV_SET:
-            {
-                MainWindwActionKeyValueInsert();
-                break;
-            }
-            case SSDB_COMMAND_KV_DEL:
-            {
-                MainWindwActionKeyValueDelete();
-                break;
-            }
-            }
-            setCurrentSSDBCommandType(SSDB_COMMAND_NONE);
-        }
-    }
 }
 
 SSDBCommandType MainWindow::getCurrentSSDBCommandType()
@@ -104,73 +59,11 @@ void MainWindow::KeyValueTreeWidgetOneClicked(QTreeWidgetItem *item, int)
     }
 }
 
-void MainWindow::ssdbResponseReady(QByteArray response)
-{
-//    qDebug() << response;
-//    bool resolveResult = false;
-//    switch(currentCommand)
-//    {
-//    case SSDB_COMMAND_KV_KEYS:
-//    {
-//        std::vector<std::string> keylist;
-//        resolveResult = SSDBCommand::KeysResolve(response.data(), keylist);
-//        if(true == resolveResult)
-//        {
-//            ui->treeWidget_keyValue->clear();
-//            for(auto iter = keylist.begin(); iter != keylist.end(); iter++)
-//            {
-//                QTreeWidgetItem *keyValueIterm = new QTreeWidgetItem(ui->treeWidget_keyValue);
-//                keyValueIterm->setText(0, (*iter).c_str());
-//            }
-//        }
-//        break;
-//    }
-//    case SSDB_COMMAND_KV_SCAN:
-//    {
-//        std::vector<std::pair<std::string, std::string>> keylist;
-//        resolveResult = SSDBCommand::ScanResolve(response.data(), keylist);
-//        if(true == resolveResult)
-//        {
-//            ui->treeWidget_keyValue->clear();
-//            for(auto iter = keylist.begin(); iter != keylist.end(); iter++)
-//            {
-//                QTreeWidgetItem *keyValueIterm = new QTreeWidgetItem(ui->treeWidget_keyValue);
-//                keyValueIterm->setText(0, (*iter).first.c_str());
-//                keyValueIterm->setText(2, (*iter).second.c_str());
-//            }
-//        }
-//        break;
-//    }
-//    case SSDB_COMMAND_KV_DEL:
-//    case SSDB_COMMAND_KV_SET:
-//    case SSDB_COMMAND_KV_SETX:
-//    {
-//        resolveResult = SSDBCommand::SetResolve(response.data());
-//        break;
-//    }
-//    default:
-//    {
-//        qDebug() << "not send request but reve response, error";
-//        break;
-//    }
-//    }
-//    if(false == resolveResult)
-//    {
-//        NoticeDialog notice{"resolve ssdb response failed"};
-//        notice.exec();
-//    }
-//    currentCommand = SSDB_COMMAND_NONE;
-}
-
 bool MainWindow::MainWindwActionConnectOrDisConnect()
 {
     std::string hostString = ui->lineEdit_host->text().toStdString();
     std::string portString = ui->lineEdit_port->text().toStdString();
     std::string passwdString = ui->lineEdit_passwd->text().toStdString();
-
-    std::string host = (hostString.empty() == true) ? "127.0.0.1" : hostString;
-    int port = (portString.empty() == true) ? 8888 : std::atoi(portString.c_str());
-    qDebug() << "host " << host.c_str() << " port " << port;
 
     if(true == m_ssdbHandler.isConnected())
     {
@@ -186,7 +79,7 @@ bool MainWindow::MainWindwActionConnectOrDisConnect()
     }
     else
     {
-        if(true == m_ssdbHandler.connectToSSDB(host, port, passwdString))
+        if(true == m_ssdbHandler.connectToSSDB(hostString, std::atoi(portString.c_str()), passwdString))
         {
             ui->pushButton_connect->setText("DisConect");
             return true;
@@ -205,12 +98,21 @@ bool MainWindow::MainWindwActionKeyValueUpdate()
     std::string key_end   = ui->lineEdit_keyValue_update_keyEnd->text().toStdString();
     std::string key_limit = ui->lineEdit_keyValue_update_keyLimit->text().toStdString();
 
-    std::vector<std::pair<std::string, std::string>> p_keyValueLists;
-    if(m_ssdbHandler.getKeyValueLists(key_start, key_end, key_limit, p_keyValueLists) == false)
+    std::vector<std::pair<std::string, std::string>> l_keyValueLists;
+    if(m_ssdbHandler.getKeyValueLists(key_start, key_end, key_limit, l_keyValueLists) == false)
     {
         qDebug() << "get key value list error";
         return false;
     }
+
+    ui->treeWidget_keyValue->clear();
+    for(auto iter = l_keyValueLists.begin(); iter != l_keyValueLists.end(); iter++)
+    {
+        QTreeWidgetItem *keyValueIterm = new QTreeWidgetItem(ui->treeWidget_keyValue);
+        keyValueIterm->setText(0, (*iter).first.c_str());
+        keyValueIterm->setText(2, (*iter).second.c_str());
+    }
+
     return true;
 }
 
@@ -257,6 +159,49 @@ bool MainWindow::MainWindwActionKeyValueDelete()
     ui->lineEdit_keyValue_insert_value->clear();
     ui->lineEdit_keyValue_insert_expire->clear();
     return true;
+}
+
+void MainWindow::runSSDBActionTaskThread()
+{
+    while(m_taskThreadExit == false)
+    {
+        SSDBCommandType l_currentType = getCurrentSSDBCommandType();
+        if(l_currentType == SSDB_COMMAND_NONE)
+        {
+            Utility::Msleep(10);
+            continue;
+        }
+
+        switch(l_currentType)
+        {
+        case SSDB_COMMAND_CONNECT:
+        {
+            MainWindwActionConnectOrDisConnect();
+            break;
+        }
+        case SSDB_COMMAND_KV_SCAN:
+        {
+            MainWindwActionKeyValueUpdate();
+            break;
+        }
+        case SSDB_COMMAND_KV_SET:
+        {
+            MainWindwActionKeyValueInsert();
+            break;
+        }
+        case SSDB_COMMAND_KV_DEL:
+        {
+            MainWindwActionKeyValueDelete();
+            break;
+        }
+        default:
+        {
+            qDebug() << "unknown ssdb command " << l_currentType;
+            break;
+        }
+        }
+        setCurrentSSDBCommandType(SSDB_COMMAND_NONE);
+    }
 }
 
 void MainWindow::on_pushButton_connect_clicked()

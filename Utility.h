@@ -4,6 +4,7 @@
 #include <string>
 #include <ctime>
 #include <vector>
+#include <thread>
 
 class Utility
 {
@@ -23,6 +24,8 @@ public:
     static std::string Hex(unsigned char ch, bool isUpper = false);
     static std::string UriEncode(const std::string input, bool encodeSlash);
     static std::string randomNumberString(int length);
+    static void        Sleep(int p_sec);
+    static void        Msleep(int p_msec);
 };
 
 #endif // UTILITY_H

@@ -1,16 +1,67 @@
 #include "TCPClient.h"
 
-TCPClient::TCPClient(const bool isSync, QObject *parent) : QObject(parent), m_type(isSync)
+TCPClient::TCPClient(QObject *parent) : QObject(parent)
 {
-    tcpsocket = new QTcpSocket();
+    tcpsocket = NULL;
+    m_tcpClientThread = NULL;
+    m_isReadyRead = false;
+
+    createTCPSocketAndThread();
 }
 
 TCPClient::~TCPClient()
 {
+    destroyTCPSocketAndThread();
+}
+
+bool TCPClient::createTCPSocketAndThread()
+{
+    if(tcpsocket == NULL)
+    {
+        tcpsocket = new QTcpSocket();
+        if(tcpsocket == NULL)
+        {
+            qDebug() << "create QTcpSocket error";
+            return false;
+        }
+    }
+    if(m_tcpClientThread == NULL)
+    {
+        m_tcpClientThread = new (std::nothrow) QThread();
+        if(m_tcpClientThread == NULL)
+        {
+            qDebug() << "create QThread for QTcpSocket error";
+            delete tcpsocket;
+            tcpsocket = NULL;
+            return false;
+        }
+    }
+
+    this->moveToThread(m_tcpClientThread);
+
+    QObject::connect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
+    QObject::connect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)),
+                     this, SLOT(ReadError(QAbstractSocket::SocketError)));
+
+    m_tcpClientThread->start();
+    return true;
+}
+
+void TCPClient::destroyTCPSocketAndThread()
+{
+    QObject::disconnect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
+    QObject::disconnect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)),
+                        this, SLOT(ReadError(QAbstractSocket::SocketError)));
+
     if(tcpsocket)
     {
         delete tcpsocket;
         tcpsocket = NULL;
+    }
+    if(m_tcpClientThread)
+    {
+        delete m_tcpClientThread;
+        m_tcpClientThread = NULL;
     }
 }
 
@@ -18,54 +69,35 @@ bool TCPClient::connect(const std::string host, const int port)
 {
     if(tcpsocket == NULL)
     {
-        tcpsocket = new QTcpSocket();
+        qDebug() << "tcpsocket == NULL";
+        return false;
     }
+
     if (tcpsocket->state() == QAbstractSocket::ConnectedState)
     {
         return true;
     }
-    else
-    {
-        tcpsocket->connectToHost(QString(host.c_str()), port);
-        if(false == tcpsocket->waitForConnected(1000))
-        {
-            delete tcpsocket;
-            tcpsocket = NULL;
-            return false;
-        }
-        else
-        {
-            if(false == m_type)
-            {
-                QObject::connect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
-                QObject::connect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)),this,
-                                 SLOT(ReadError(QAbstractSocket::SocketError)));
-            }
 
-            return true;
-        }
+    tcpsocket->connectToHost(QString(host.c_str()), port);
+    if(false == tcpsocket->waitForConnected(TCP_WAIT_FOR_CONNECT_TIMEOUT_MSEC))
+    {
+        destroyTCPSocketAndThread();
+        return false;
     }
+    return true;
 }
 
 bool TCPClient::disConnect()
 {
-    if(tcpsocket)
+    if(tcpsocket && m_tcpClientThread)
     {
         tcpsocket->disconnectFromHost();
         if (tcpsocket->state() != QAbstractSocket::UnconnectedState)
         {
             tcpsocket->waitForDisconnected(1000);
         }
-        if(false == m_type)
-        {
-            QObject::disconnect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
-            QObject::disconnect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
-                                SLOT(ReadError(QAbstractSocket::SocketError)));
-        }
-
-        delete tcpsocket;
-        tcpsocket = NULL;
     }
+    destroyTCPSocketAndThread();
     return true;
 }
 
@@ -73,6 +105,7 @@ bool TCPClient::isConnected()
 {
     if(tcpsocket == NULL)
     {
+        qDebug() << "tcpsocket == NULL";
         return false;
     }
     return tcpsocket->state() == QAbstractSocket::ConnectedState;
@@ -80,12 +113,10 @@ bool TCPClient::isConnected()
 
 void TCPClient::readDownlinkData()
 {
-    QByteArray buffer = tcpsocket->readAll();
-    if(false == buffer.isEmpty())
-    {
-        qDebug() << buffer;
-        emit ResponseReady(buffer);
-    }
+    qDebug() << "read downlink data ready";
+    m_isReadyReadMutex.lock();
+    m_isReadyRead = true;
+    m_isReadyReadMutex.unlock();
 }
 
 void TCPClient::ReadError(QAbstractSocket::SocketError error)
@@ -98,6 +129,7 @@ bool TCPClient::writeCount(const char* data, const int length)
 {
     if(tcpsocket == NULL)
     {
+        qDebug() << "tcpsocket == NULL";
         return false;
     }
 
@@ -118,19 +150,28 @@ QByteArray TCPClient::readCount(int p_timeout)
 {
     if(tcpsocket == NULL)
     {
-        return false;
+        qDebug() << "tcpsocket == NULL";
+        return QByteArray();
     }
 
-    std::time_t start = std::time(NULL);
+    std::time_t l_startTimestamps = std::time(NULL);
     do
     {
-        QByteArray buffer = tcpsocket->readAll();
-        if(buffer.isEmpty() == false)
+        m_isReadyReadMutex.lock();
+        if(m_isReadyRead == true)
         {
-            return buffer;
+            QByteArray buffer = tcpsocket->readAll();
+            if(buffer.isEmpty() == false)
+            {
+                m_isReadyRead = false;
+                m_isReadyReadMutex.unlock();
+                return buffer;
+            }
         }
+        m_isReadyReadMutex.unlock();
+        Utility::Msleep(100);
     }
-    while(std::time(NULL) <= (start + p_timeout));
+    while(std::time(NULL) <= (l_startTimestamps + p_timeout));
     qDebug() << "TCPClient::readCount timeout";
     return QByteArray();
 }

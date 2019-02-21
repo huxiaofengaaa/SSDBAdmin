@@ -3,6 +3,9 @@
 
 #include "TCPClient.h"
 #include "SSDBCommand.h"
+#include <QThread>
+
+#define SSDB_READ_RESPONSE_TIMEOUT          2
 
 class SSDBHandler
 {

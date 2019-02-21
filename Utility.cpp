@@ -1,6 +1,9 @@
 #include "Utility.h"
 
-bool Utility::string_split(const std::string& p_src_string, const std::string& p_seperator, std::string& p_first_split, std::string& p_second_split)
+bool Utility::string_split(const std::string& p_src_string,
+                           const std::string& p_seperator,
+                           std::string& p_first_split,
+                           std::string& p_second_split)
 {
     if(p_seperator.empty() == true || p_src_string.empty() == true)
     {
@@ -23,7 +26,9 @@ bool Utility::string_split(const std::string& p_src_string, const std::string& p
     }
 }
 
-bool Utility::string_split(const std::string& p_src_string, const std::string& p_seperator, std::vector<std::string>& p_split_result)
+bool Utility::string_split(const std::string& p_src_string,
+                           const std::string& p_seperator,
+                           std::vector<std::string>& p_split_result)
 {
     if(p_seperator.empty() == true || p_src_string.empty() == true)
     {
@@ -148,7 +153,9 @@ bool Utility::string_endwith(const std::string& p_src_string, const std::string&
     return true;
 }
 
-bool Utility::string_replace(std::string& p_src_string, const std::string& p_sub_string, const std::string& p_new_string)
+bool Utility::string_replace(std::string& p_src_string,
+                             const std::string& p_sub_string,
+                             const std::string& p_new_string)
 {
     if(p_src_string.empty() == true || p_sub_string.empty() == true || p_sub_string == p_new_string)
     {
@@ -324,4 +331,16 @@ std::string Utility::randomNumberString(int length)
         result += std::to_string(last_number % 10);
     }
     return result;
+}
+
+void Utility::Sleep(int p_sec)
+{
+    std::chrono::milliseconds dura(p_sec * 1000);
+    std::this_thread::sleep_for(dura);
+}
+
+void Utility::Msleep(int p_msec)
+{
+    std::chrono::milliseconds dura(p_msec);
+    std::this_thread::sleep_for(dura);
 }

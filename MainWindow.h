@@ -22,7 +22,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void ssdbResponseReady(QByteArray);
     void KeyValueTreeWidgetOneClicked(QTreeWidgetItem *item, int column);
     void on_pushButton_connect_clicked();
     void on_pushButton_keyValue_update_clicked();

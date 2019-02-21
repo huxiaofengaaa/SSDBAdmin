@@ -2,7 +2,7 @@
 
 SSDBHandler::SSDBHandler()
 {
-    m_tcpClient = new (std::nothrow) TCPClient(false);
+    m_tcpClient = new (std::nothrow) TCPClient();
 }
 
 SSDBHandler::~SSDBHandler()
@@ -68,7 +68,7 @@ bool SSDBHandler::disConnectFromSSDB()
 bool SSDBHandler::getKeyValueLists(const std::string p_keyStart,
                                    const std::string p_keyEnd,
                                    const std::string p_keyLimit,
-                                   std::vector<std::pair<std::string, std::string>>& p_keyValueLists)
+                                   std::vector<std::pair<std::string, std::string>>&)
 {
     std::string l_command = SSDBCommand::ScanBuild(p_keyStart, p_keyEnd, p_keyLimit);
 
@@ -130,8 +130,6 @@ bool SSDBHandler::deleteKeyValue(const std::string p_key)
 
 bool SSDBHandler::sendSSDBCommandRequest(std::string p_command)
 {
-    qDebug() << p_command.c_str();
-
     if(m_tcpClient == NULL)
     {
         qDebug() << "m_tcpClient == NULL";
@@ -143,6 +141,8 @@ bool SSDBHandler::sendSSDBCommandRequest(std::string p_command)
         qDebug() << "send ssdb command error";
         return false;
     }
+    QString l_command = p_command.c_str();
+    qDebug() << "send ssdb command success, " << l_command;
     return true;
 }
 
@@ -151,9 +151,9 @@ std::string SSDBHandler::readSSDBCommandResponse()
     if(m_tcpClient == NULL)
     {
         qDebug() << "m_tcpClient == NULL";
-        return false;
+        return "";
     }
-    QByteArray response = m_tcpClient->readCount(2);
+    QByteArray response = m_tcpClient->readCount(SSDB_READ_RESPONSE_TIMEOUT);
     qDebug() << response;
     return response.data();
 }

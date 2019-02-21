@@ -4,15 +4,19 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QDebug>
+#include <QThread>
 #include <string>
 #include <ctime>
 #include <mutex>
+#include "Utility.h"
+
+#define TCP_WAIT_FOR_CONNECT_TIMEOUT_MSEC        1000
 
 class TCPClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit TCPClient(const bool isSync, QObject *parent = 0);
+    explicit TCPClient(QObject *parent = 0);
     ~TCPClient();
     bool connect(const std::string host, const int port);
     bool disConnect();
@@ -26,8 +30,13 @@ public slots:
     void readDownlinkData();
     void ReadError(QAbstractSocket::SocketError error);
 private:
+    bool createTCPSocketAndThread();
+    void destroyTCPSocketAndThread();
+
     QTcpSocket* tcpsocket;
-    const bool m_type;
+    QThread*    m_tcpClientThread;
+    bool        m_isReadyRead;
+    std::mutex  m_isReadyReadMutex;
 };
 
 #endif // TCPCLIENT_H
