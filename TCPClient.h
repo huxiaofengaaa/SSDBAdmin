@@ -1,42 +1,38 @@
 #ifndef TCPCLIENT_H
 #define TCPCLIENT_H
 
-#include <QObject>
-#include <QTcpSocket>
 #include <QDebug>
-#include <QThread>
 #include <string>
 #include <ctime>
 #include <mutex>
+#include <iostream>
 #include "Utility.h"
+#include "asio.hpp"
 
 #define TCP_WAIT_FOR_CONNECT_TIMEOUT_MSEC        1000
 
-class TCPClient : public QObject
+class TCPClient
 {
-    Q_OBJECT
 public:
-    explicit TCPClient(QObject *parent = 0);
+    TCPClient(const std::string host = "", const int port = -1);
     ~TCPClient();
     bool connect(const std::string host, const int port);
     bool disConnect();
     bool isConnected();
     bool writeCount(const char* data, const int length);
-    QByteArray readCount(int p_timeout);
+    int  readCount(char* data, int maxLength);
+    int  readLine(char* data, int maxLength);
 
-signals:
-    void ResponseReady(QByteArray);
-public slots:
-    void readDownlinkData();
-    void ReadError(QAbstractSocket::SocketError error);
 private:
-    bool createTCPSocketAndThread();
-    void destroyTCPSocketAndThread();
+    std::string m_host;
+    int         m_port;
+    asio::io_context         m_ioContext;
+    asio::ip::tcp::resolver  m_resolver;
+    asio::ip::tcp::socket    m_tcpSocket;
 
-    QTcpSocket* tcpsocket;
-    QThread*    m_tcpClientThread;
-    bool        m_isReadyRead;
-    std::mutex  m_isReadyReadMutex;
+//    asio::io_context         m_ioContext;
+//    asio::ip::tcp::resolver* m_resolver;
+//    asio::ip::tcp::socket*   m_tcpSocket;
 };
 
 #endif // TCPCLIENT_H

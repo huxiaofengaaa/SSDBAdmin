@@ -1,177 +1,57 @@
 #include "TCPClient.h"
 
-TCPClient::TCPClient(QObject *parent) : QObject(parent)
+TCPClient::TCPClient(const std::string host, const int port):
+    m_resolver(asio::ip::tcp::resolver(m_ioContext)),
+    m_tcpSocket(asio::ip::tcp::socket(m_ioContext))
 {
-    tcpsocket = NULL;
-    m_tcpClientThread = NULL;
-    m_isReadyRead = false;
-
-    createTCPSocketAndThread();
+    m_host = host;
+    m_port = port;
 }
 
 TCPClient::~TCPClient()
 {
-    destroyTCPSocketAndThread();
-}
 
-bool TCPClient::createTCPSocketAndThread()
-{
-    if(tcpsocket == NULL)
-    {
-        tcpsocket = new QTcpSocket();
-        if(tcpsocket == NULL)
-        {
-            qDebug() << "create QTcpSocket error";
-            return false;
-        }
-    }
-    if(m_tcpClientThread == NULL)
-    {
-        m_tcpClientThread = new (std::nothrow) QThread();
-        if(m_tcpClientThread == NULL)
-        {
-            qDebug() << "create QThread for QTcpSocket error";
-            delete tcpsocket;
-            tcpsocket = NULL;
-            return false;
-        }
-    }
-
-    this->moveToThread(m_tcpClientThread);
-
-    QObject::connect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
-    QObject::connect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)),
-                     this, SLOT(ReadError(QAbstractSocket::SocketError)));
-
-    m_tcpClientThread->start();
-    return true;
-}
-
-void TCPClient::destroyTCPSocketAndThread()
-{
-    QObject::disconnect(tcpsocket, SIGNAL(readyRead()), this, SLOT(readDownlinkData()));
-    QObject::disconnect(tcpsocket, SIGNAL(error(QAbstractSocket::SocketError)),
-                        this, SLOT(ReadError(QAbstractSocket::SocketError)));
-
-    if(tcpsocket)
-    {
-        delete tcpsocket;
-        tcpsocket = NULL;
-    }
-    if(m_tcpClientThread)
-    {
-        delete m_tcpClientThread;
-        m_tcpClientThread = NULL;
-    }
 }
 
 bool TCPClient::connect(const std::string host, const int port)
 {
-    if(tcpsocket == NULL)
-    {
-        qDebug() << "tcpsocket == NULL";
-        return false;
-    }
+    m_host = host;
+    m_port = port;
 
-    if (tcpsocket->state() == QAbstractSocket::ConnectedState)
-    {
-        return true;
-    }
+//    asio::error_code l_errorCode;
+//    asio::connect(m_tcpSocket, m_resolver.resolve(m_host.c_str(), std::to_string(m_port)), l_errorCode);
+//    std::cout << "connect errorCode " << l_errorCode.value() << std::endl;
 
-    tcpsocket->connectToHost(QString(host.c_str()), port);
-    if(false == tcpsocket->waitForConnected(TCP_WAIT_FOR_CONNECT_TIMEOUT_MSEC))
-    {
-        destroyTCPSocketAndThread();
-        return false;
-    }
-    return true;
+    return false;
 }
 
 bool TCPClient::disConnect()
 {
-    if(tcpsocket && m_tcpClientThread)
-    {
-        tcpsocket->disconnectFromHost();
-        if (tcpsocket->state() != QAbstractSocket::UnconnectedState)
-        {
-            tcpsocket->waitForDisconnected(1000);
-        }
-    }
-    destroyTCPSocketAndThread();
-    return true;
+
+    return false;
 }
 
 bool TCPClient::isConnected()
 {
-    if(tcpsocket == NULL)
-    {
-        qDebug() << "tcpsocket == NULL";
-        return false;
-    }
-    return tcpsocket->state() == QAbstractSocket::ConnectedState;
-}
 
-void TCPClient::readDownlinkData()
-{
-    qDebug() << "read downlink data ready";
-    m_isReadyReadMutex.lock();
-    m_isReadyRead = true;
-    m_isReadyReadMutex.unlock();
-}
-
-void TCPClient::ReadError(QAbstractSocket::SocketError error)
-{
-    qDebug() << "ReadError " << error;
-    disConnect();
+    return false;
 }
 
 bool TCPClient::writeCount(const char* data, const int length)
 {
-    if(tcpsocket == NULL)
-    {
-        qDebug() << "tcpsocket == NULL";
-        return false;
-    }
 
-    int alreadyWrite = 0;
-    while(alreadyWrite < length)
-    {
-        int nwrite = tcpsocket->write(data + alreadyWrite, length - alreadyWrite);
-        if(nwrite < 0)
-        {
-            break;
-        }
-        alreadyWrite += nwrite;
-    }
-    return alreadyWrite == length;
+    return false;
 }
 
-QByteArray TCPClient::readCount(int p_timeout)
+int  TCPClient::readCount(char* data, int maxLength)
 {
-    if(tcpsocket == NULL)
-    {
-        qDebug() << "tcpsocket == NULL";
-        return QByteArray();
-    }
 
-    std::time_t l_startTimestamps = std::time(NULL);
-    do
-    {
-        m_isReadyReadMutex.lock();
-        if(m_isReadyRead == true)
-        {
-            QByteArray buffer = tcpsocket->readAll();
-            if(buffer.isEmpty() == false)
-            {
-                m_isReadyRead = false;
-                m_isReadyReadMutex.unlock();
-                return buffer;
-            }
-        }
-        m_isReadyReadMutex.unlock();
-        Utility::Msleep(100);
-    }
-    while(std::time(NULL) <= (l_startTimestamps + p_timeout));
-    qDebug() << "TCPClient::readCount timeout";
-    return QByteArray();
+    return 0;
+}
+
+int  TCPClient::readLine(char* data, int maxLength)
+{
+
+
+    return 0;
 }

@@ -153,8 +153,15 @@ std::string SSDBHandler::readSSDBCommandResponse()
         qDebug() << "m_tcpClient == NULL";
         return "";
     }
-    QByteArray response = m_tcpClient->readCount(SSDB_READ_RESPONSE_TIMEOUT);
-    qDebug() << response;
-    return response.data();
+    char l_LineBuffer[1024 * 16] = { 0 };
+    int l_LineLength =  m_tcpClient->readCount(l_LineBuffer, sizeof(l_LineBuffer));
+    if(l_LineLength > 0)
+    {
+        return std::string(l_LineBuffer, l_LineLength);
+    }
+    else
+    {
+        return "";
+    }
 }
 
