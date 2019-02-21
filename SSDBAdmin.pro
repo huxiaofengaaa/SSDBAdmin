@@ -11,6 +11,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = SSDBAdmin
 TEMPLATE = app
 
+INCLUDEPATH += .\asio-1.12.2\include
+DEFINES += ASIO_STANDALONE
+LIBS += -lws2_32
 
 SOURCES += main.cpp\
         MainWindow.cpp \
