@@ -27,7 +27,7 @@
       <item>
        <widget class="QLineEdit" name="lineEdit_host">
         <property name="text">
-         <string>192.168.92.168</string>
+         <string>10.192.66.211</string>
         </property>
        </widget>
       </item>
