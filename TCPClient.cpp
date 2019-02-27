@@ -61,59 +61,100 @@ bool TCPClient::isConnected()
 
 bool TCPClient::writeCount(const char* data, const int length)
 {
+    if(data == NULL || length <= 0)
+    {
+        qDebug() << "tcp client write count input argment is error";
+        return false;
+    }
 
-    return false;
+    asio::error_code l_errorCode;
+    int l_nWrite = m_tcpSocket.write_some(asio::buffer(data, length), l_errorCode);
+    if(l_nWrite == length && l_errorCode.value() == 0)
+    {
+        return true;
+    }
+    else
+    {
+        qDebug() << "tcp client write error, errorCode = " << l_errorCode.value();
+        return false;
+    }
 }
 
 int  TCPClient::readCount(char* data, int maxLength)
 {
-    std::time_t l_readStartTimestamps = std::time(NULL);
+    if(data == NULL || maxLength <= 0)
+    {
+        qDebug() << "tcp client read count input argment is error";
+        return false;
+    }
+
+    std::time_t l_startTime = std::time(NULL);
     do
     {
-        size_t l_countReadyRead = m_tcpSocket.available();
-        if(l_countReadyRead < maxLength)
+        if(m_tcpSocket.available() > 0)
         {
-            Utility::Msleep(50);
-        }
-        else
-        {
-            break;
+            asio::error_code l_errorCode;
+            int l_nRead = m_tcpSocket.read_some(asio::buffer(data, maxLength), l_errorCode);
+            if(l_errorCode.value() == 0)
+            {
+                return l_nRead;
+            }
+            else
+            {
+                qDebug() << "tcp client read error, errorCode = " << l_errorCode.value();
+                return -1;
+            }
         }
     }
-    while(std::time(NULL) < (l_readStartTimestamps + 2));
-
-    size_t l_countReadyRead = m_tcpSocket.available();
-    if(l_countReadyRead > 0)
-    {
-        m_tcpSocket.read_some();
-    }
-
-    return 0;
+    while(std::time(NULL) <= (l_startTime + 2));
+    return false;
 }
 
 int  TCPClient::readLine(char* data, int maxLength)
 {
-    std::time_t l_readStartTimestamps = std::time(NULL);
+    if(data == NULL || maxLength <= 0)
+    {
+        qDebug() << "tcp client read line input argment is error";
+        return false;
+    }
+
+    int l_readOffset = 0;
+    std::time_t l_startTime = std::time(NULL);
     do
     {
-        size_t l_countReadyRead = m_tcpSocket.available();
-        if(l_countReadyRead < maxLength)
+        if(true == readCount(data + l_readOffset, 1))
         {
-            Utility::Msleep(50);
+            l_readOffset++;
+            if(data[l_readOffset - 1] == '\n')
+            {
+                break;
+            }
         }
         else
         {
             break;
         }
     }
-    while(std::time(NULL) < (l_readStartTimestamps + 2));
+    while(std::time(NULL) <= (l_startTime + 2));
+    return l_readOffset;
+}
 
-    size_t l_countReadyRead = m_tcpSocket.available();
-    if(l_countReadyRead > 0)
-    {
-        asio::streambuf response;
-        return asio::read_until(m_tcpSocket, response, "\n");
-    }
+std::string TCPClient::host() const
+{
+    return m_host;
+}
 
-    return 0;
+void TCPClient::setHost(const std::string &host)
+{
+    m_host = host;
+}
+
+int TCPClient::port() const
+{
+    return m_port;
+}
+
+void TCPClient::setPort(int port)
+{
+    m_port = port;
 }

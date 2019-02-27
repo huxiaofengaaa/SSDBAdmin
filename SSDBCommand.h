@@ -6,39 +6,38 @@
 #include <vector>
 #include "Utility.h"
 
-typedef enum
+struct KeyValueItem
 {
-    SSDB_COMMAND_NONE,
-    SSDB_COMMAND_CONNECT,
-    SSDB_COMMAND_KV_SCAN,
-    SSDB_COMMAND_KV_SET,
-    SSDB_COMMAND_KV_DEL
-}SSDBCommandType;
+    std::string m_key;
+    std::string m_value;
+    std::string m_expire;
+};
 
-class SSDBCommand
+class SSDBCommandKeyValue
+{
+public:
+    virtual ~SSDBCommandKeyValue() = default;
+
+    static std::string KeyValueBuildDel(std::string key);
+    static std::string KeyValueBuildKeys(std::string key_start, std::string key_end, std::string key_limit);
+    static std::string KeyValueBuildScan(std::string key_start, std::string key_end, std::string key_limit);
+    static std::string KeyValueBuildSet(std::string key, std::string value);
+    static std::string KeyValueBuildSetx(std::string key, std::string value, std::string expire);
+    static std::string KeyValueBuildTTL(std::string key);
+
+    static bool        KeyValueResolveDel(const std::vector<std::string> splitResult);
+    static bool        KeyValueResolveKeys(const std::vector<std::string> splitResult, std::vector<std::string>& keylist);
+    static bool        KeyValueResolveScan(const std::vector<std::string> splitResult, std::vector<std::pair<std::string, std::string>>& keylist);
+    static bool        KeyValueResolveSet(const std::vector<std::string> splitResult);
+    static bool        KeyValueResolveSetx(const std::vector<std::string> splitResult);
+    static bool        KeyValueResolveTTL(const std::vector<std::string> splitResult, std::string& value);
+};
+
+class SSDBCommand: public SSDBCommandKeyValue
 {
 public:
     // server
     static std::string Authbuild(std::string passwd);
-
-    // key value
-    static std::string DelBuild(std::string key);
-    static bool        DelResole(const std::string str);
-    static std::string Keysbuild(std::string key_start, std::string key_end, std::string key_limit);
-    static bool        KeysResolve(const std::string str, std::vector<std::string>& keylist);
-    static std::string ScanBuild(std::string key_start, std::string key_end, std::string key_limit);
-    static bool        ScanResolve(const std::string str, std::vector<std::pair<std::string, std::string>>& keylist);
-    static std::string SetBuild(std::string key, std::string value);
-    static bool        SetResolve(const std::string str);
-    static std::string SetxBuild(std::string key, std::string value, std::string expire);
-    static bool        SetxResolve(const std::string str);
-
-
-    // hashmap
-
-    // sorted set
-
-    // list
 };
 
 #endif // SSDBCOMMAND_H

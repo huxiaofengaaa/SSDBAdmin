@@ -29,21 +29,13 @@ private slots:
     void on_pushButton_keyValue_delete_clicked();
 
 private:
-    void                     runSSDBActionTaskThread();
-    SSDBCommandType          getCurrentSSDBCommandType();
-    void                     setCurrentSSDBCommandType(SSDBCommandType p_type);
-
-    bool                     MainWindwActionConnectOrDisConnect();
-    bool                     MainWindwActionKeyValueUpdate();
-    bool                     MainWindwActionKeyValueInsert();
-    bool                     MainWindwActionKeyValueDelete();
+    bool                     getControlIfApplicationInIdleStatus();
+    void                     releaseApplicationControl();
 
     Ui::MainWindow           *ui;
     SSDBHandler              m_ssdbHandler;
-    std::thread              m_taskThread;
-    bool                     m_taskThreadExit;
-    SSDBCommandType          m_currentCommand;
-    std::mutex               m_currentCommandMutex;
+    bool                     m_applicationInIdle;
+    std::mutex               m_applicationInIdleMutex;
 };
 
 #endif // MAINWINDOW_H
