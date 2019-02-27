@@ -111,11 +111,12 @@ void MainWindow::on_pushButton_keyValue_update_clicked()
         return;
     }
 
+    qDebug() << "=============================================================";
     std::string key_start = ui->lineEdit_keyValue_update_keyStart->text().toStdString();
     std::string key_end   = ui->lineEdit_keyValue_update_keyEnd->text().toStdString();
     std::string key_limit = ui->lineEdit_keyValue_update_keyLimit->text().toStdString();
 
-    std::vector<std::pair<std::string, std::string>> l_keyValueLists;
+    KeyValueListType l_keyValueLists;
     if(true == m_ssdbHandler.getKeyValueLists(key_start, key_end, key_limit, l_keyValueLists))
     {
         ui->treeWidget_keyValue->clear();
@@ -124,8 +125,9 @@ void MainWindow::on_pushButton_keyValue_update_clicked()
         {
             QTreeWidgetItem *keyValueIterm = new QTreeWidgetItem(ui->treeWidget_keyValue);
             keyValueIterm->setText(0, std::to_string(l_itemIndex).c_str());
-            keyValueIterm->setText(1, (*iter).first.c_str());
-            keyValueIterm->setText(3, (*iter).second.c_str());
+            keyValueIterm->setText(1, (*iter)->m_key.c_str());
+            keyValueIterm->setText(2, (*iter)->m_expire.c_str());
+            keyValueIterm->setText(3, (*iter)->m_value.c_str());
             l_itemIndex++;
         }
     }
@@ -145,6 +147,7 @@ void MainWindow::on_pushButton_keyValue_insert_clicked()
         notice.exec();
         return;
     }
+    qDebug() << "=============================================================";
 
     std::string key = ui->lineEdit_keyValue_insert_key->text().toStdString();
     std::string value = ui->lineEdit_keyValue_insert_value->text().toStdString();
@@ -165,7 +168,7 @@ void MainWindow::on_pushButton_keyValue_insert_clicked()
     }
     else
     {
-        qDebug() << __FUNCTION__ << " - key or value is null";
+        qDebug() << __FUNCTION__ << " - key value argment error";
     }
 
     releaseApplicationControl();
@@ -181,6 +184,7 @@ void MainWindow::on_pushButton_keyValue_delete_clicked()
         return;
     }
 
+    qDebug() << "=============================================================";
     std::string key = ui->lineEdit_keyValue_insert_key->text().toStdString();
 
     if(key.empty() == false)

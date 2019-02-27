@@ -68,7 +68,7 @@ bool SSDBHandler::disConnectFromSSDB()
 bool SSDBHandler::getKeyValueLists(const std::string p_keyStart,
                                    const std::string p_keyEnd,
                                    const std::string p_keyLimit,
-                                   KeyValueListType& p_keyValueLists)
+                                   KeyValueListType& p_keyValueItemLists)
 {
     std::string l_command = SSDBCommand::KeyValueBuildScan(p_keyStart, p_keyEnd, p_keyLimit);
 
@@ -85,15 +85,27 @@ bool SSDBHandler::getKeyValueLists(const std::string p_keyStart,
         return false;
     }
 
-    if(true == SSDBCommand::KeyValueResolveScan(l_response, p_keyValueLists))
-    {
-        return true;
-    }
-    else
+    std::vector<std::pair<std::string, std::string>> l_keyValueLists;
+    if(false == SSDBCommand::KeyValueResolveScan(l_response, l_keyValueLists))
     {
         qDebug() << __FUNCTION__ << " - ScanResolve error";
         return false;
     }
+
+    for(auto iter = l_keyValueLists.begin(); iter != l_keyValueLists.end(); iter++)
+    {
+        std::string l_keyTTL;
+        if(false == getKeyValueTTL((*iter).first, l_keyTTL))
+        {
+            qDebug() << __FUNCTION__ << " - getKeyValueTTL error, key = " << (*iter).first.c_str();
+            continue;
+        }
+        p_keyValueItemLists.push_back(std::make_shared<KeyValueItem>((*iter).first,
+                                                                     (*iter).second,
+                                                                     l_keyTTL));
+    }
+
+    return true;
 }
 
 bool SSDBHandler::insertKeyValue(const std::string p_key,
@@ -123,6 +135,22 @@ bool SSDBHandler::insertKeyValue(const std::string p_key,
         return false;
     }
 
+    if(!p_expire.empty())
+    {
+        if(false == SSDBCommand::KeyValueResolveSetx(l_response))
+        {
+            qDebug() << __FUNCTION__ << " - KeyValueResolveSetx error";
+            return false;
+        }
+    }
+    else
+    {
+        if(false == SSDBCommand::KeyValueResolveSet(l_response))
+        {
+            qDebug() << __FUNCTION__ << " - KeyValueResolveSet error";
+            return false;
+        }
+    }
 
     return true;
 }
@@ -141,6 +169,38 @@ bool SSDBHandler::deleteKeyValue(const std::string p_key)
     if(l_response.size() <= 0)
     {
         qDebug() << __FUNCTION__ << " - readSSDBCommandResponse error";
+        return false;
+    }
+
+    if(false == SSDBCommand::KeyValueResolveDel(l_response))
+    {
+        qDebug() << __FUNCTION__ << " - KeyValueResolveDel error";
+        return false;
+    }
+
+    return true;
+}
+
+bool SSDBHandler::getKeyValueTTL(const std::string p_key, std::string& p_ttl)
+{
+    std::string l_command = SSDBCommand::KeyValueBuildTTL(p_key);
+
+    if(sendSSDBCommandRequest(l_command) == false)
+    {
+        qDebug() << __FUNCTION__ << " - sendSSDBCommandRequest error";
+        return false;
+    }
+
+    std::vector<std::string> l_response = readSSDBCommandResponse();
+    if(l_response.size() <= 0)
+    {
+        qDebug() << __FUNCTION__ << " - readSSDBCommandResponse error";
+        return false;
+    }
+
+    if(false == SSDBCommand::KeyValueResolveTTL(l_response, p_ttl))
+    {
+        qDebug() << __FUNCTION__ << " - KeyValueResolveTTL error";
         return false;
     }
 

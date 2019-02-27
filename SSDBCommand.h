@@ -6,13 +6,6 @@
 #include <vector>
 #include "Utility.h"
 
-struct KeyValueItem
-{
-    std::string m_key;
-    std::string m_value;
-    std::string m_expire;
-};
-
 class SSDBCommandKeyValue
 {
 public:

@@ -142,9 +142,25 @@ bool SSDBCommandKeyValue::KeyValueResolveSetx(const std::vector<std::string> spl
 
 bool SSDBCommandKeyValue::KeyValueResolveTTL(const std::vector<std::string> splitResult, std::string& value)
 {
-
-    value = "-1";
-    return true;
+    int splitSize = splitResult.size();
+    if(true == CommonResponseSpliteResultCheck(splitResult))
+    {
+        if(splitSize == 5 && std::atoi(splitResult[2].c_str()) == (splitResult[3].size() - 1))
+        {
+            value = splitResult[3].substr(0, std::atoi(splitResult[2].c_str()));
+            return true;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " - splitSize error";
+            return false;
+        }
+    }
+    else
+    {
+        qDebug() << __FUNCTION__ << " - CommonResponseSpliteResultCheck error";
+        return false;
+    }
 }
 
 
